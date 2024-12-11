@@ -11,8 +11,7 @@ permissions:
   packages: write
 
 env:
-  DOCKER_REPO: ghcr.io/${{ github.repository }}
-
+  DOCKER_REPO: ghcr.io/healthstudyclub/mailhog-docker
 jobs:
   build:
     runs-on: ubuntu-latest
