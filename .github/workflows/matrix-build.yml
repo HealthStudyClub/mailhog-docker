@@ -6,7 +6,7 @@ on:
       - "v*"
 
 env:
-  DOCKER_REPO: richarvey/mailhog
+  DOCKER_REPO: ghcr.io/${{ github.repository }}
 
 jobs:
   build:
@@ -18,8 +18,8 @@ jobs:
         platform:
           - linux/amd64
           - linux/arm64
-          - linux/arm/v6
-          - linux/arm/v7
+          #- linux/arm/v6
+          #- linux/arm/v7
 
     steps:
       - name: Set vars
@@ -32,13 +32,13 @@ jobs:
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build docker images
+      - name: Build and push docker images
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -58,20 +58,17 @@ jobs:
         run: |
           echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Login to Docker Hub
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Docker Hub manifest
+      - name: Create and push Docker manifest
         run: |
-          docker manifest create $DOCKER_REPO:latest \
-            $DOCKER_REPO:${{ steps.vars.outputs.version }}-linux-amd64 \
-            $DOCKER_REPO:${{ steps.vars.outputs.version }}-linux-arm64 \
-            $DOCKER_REPO:${{ steps.vars.outputs.version }}-linux-arm-v6 \
-            $DOCKER_REPO:${{ steps.vars.outputs.version }}-linux-arm-v7
-
-      - name: Push manifests
-        run: |
-          docker manifest push $DOCKER_REPO:latest
+          docker manifest create ${{ env.DOCKER_REPO }}:latest \
+            ${{ env.DOCKER_REPO }}:${{ steps.vars.outputs.version }}-linux-amd64 \
+            ${{ env.DOCKER_REPO }}:${{ steps.vars.outputs.version }}-linux-arm64
+            #${{ env.DOCKER_REPO }}:${{ steps.vars.outputs.version }}-linux-arm-v6 \
+            #${{ env.DOCKER_REPO }}:${{ steps.vars.outputs.version }}-linux-arm-v7
+          docker manifest push ${{ env.DOCKER_REPO }}:latest
